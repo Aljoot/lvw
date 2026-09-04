@@ -1,0 +1,1225 @@
+<style>
+body {
+    font-family: 'Arial', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+#game-area-wrapper {
+    display: flex; 
+    flex-direction: column;
+    align-items: center;
+    max-width: 950px;
+}
+
+#game-info {
+    width: 100%;
+    max-width: 420px;
+    padding: 10px 0;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #ccc;
+    text-align: center;
+}
+
+#player-turn {
+    font-size: 1.5em;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+#status-message {
+    font-size: 1em;
+    min-height: 20px; 
+}
+
+#board-and-notation {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    margin-top: 20px;
+    gap: 20px;
+}
+
+#left-captures-column {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 90px;
+    height: 612px;
+}
+
+.captures-container {
+    width: 100%;
+    height: 48%; 
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 4px;
+    padding: 6px;
+    box-sizing: border-box;
+}
+
+#top-captures {
+    align-content: flex-start;
+}
+
+#bottom-captures {
+    align-content: flex-end; 
+}
+
+.captured-piece {
+    width: 18px;
+    height: 18px;
+    box-sizing: border-box;
+    box-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.captured-lava { background-color: #ff9900; border: 2px solid #cc7a00; }
+.captured-water { background-color: #00bfff; border: 2px solid #0099cc; }
+.captured-lava.source { background-color: #ff4500; border: 2px solid #8b2500; }
+.captured-water.source { background-color: #1e90ff; border: 2px solid #104e8b; }
+
+#board-wrapper {
+    position: relative;
+    width: 432px; 
+    height: 612px;
+}
+
+#game-board {
+    display: grid;
+    grid-template-columns: repeat(7, 60px); 
+    grid-template-rows: repeat(10, 60px); 
+    width: 420px; 
+    height: 600px; 
+    border: 6px solid #333;
+    transition: filter 0.3s, border-color 0.3s;
+}
+
+#pause-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    display: none; 
+    flex-direction: column; 
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5em;
+    font-weight: bold;
+    text-align: center;
+    z-index: 50;
+    backdrop-filter: blur(2px);
+    border: 6px solid #555;
+    box-sizing: border-box;
+}
+
+#game-board.pov-lava { border-color: #ffcc99; }
+#game-board.pov-water { border-color: #99d6ff; }
+#game-board.replay-mode { filter: brightness(0.65) saturate(0.4); }
+
+.rotated-board { transform: rotate(180deg); }
+.rotated-board .cell { transform: rotate(-180deg); }
+
+.cell {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    background-color: #e0e0e0; 
+    transition: opacity 0.3s, filter 0.3s; 
+    padding: 0; 
+    position: relative; 
+}
+
+.coord-label {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 0.6em;
+    color: #888;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 1px 3px;
+    border-radius: 3px;
+    z-index: 10; 
+    display: none;
+}
+
+#game-board.show-coordinates .coord-label { display: block; }
+
+.piece {
+    width: 100%; 
+    height: 100%; 
+    transition: all 0.2s ease;
+    box-shadow: none;
+    z-index: 5; 
+    cursor: grab; 
+    touch-action: none; 
+    box-sizing: border-box; 
+}
+
+.piece.dragging { opacity: 0.1; }
+
+.lava { background-color: #ff9900; border: 3px solid #cc7a00; }
+.water { background-color: #00bfff; border: 3px solid #0099cc; }
+.lava-source { background-color: #ff4500; border: 4px solid #8b2500; }
+.water-source { background-color: #1e90ff; border: 4px solid #104e8b; }
+
+.cell.selected > .piece { box-shadow: 0 0 10px 3px yellow !important; }
+.cell.highlight-valid { background-color: #aaffaa !important; }
+.cell.highlight-valid.drag-hover { box-shadow: 0 0 10px 5px rgba(0, 255, 0, 0.7); }
+.piece:hover:not(.dragging) { filter: brightness(1.2); }
+
+#controls { margin-top: 20px; margin-bottom: 10px; }
+button {
+    padding: 10px 20px;
+    font-size: 1em;
+    cursor: pointer;
+    margin: 0 5px;
+    border: none;
+    border-radius: 5px;
+    transition: background-color 0.2s;
+}
+
+#rotate-button, #coordinate-toggle, #replay-toggle { background-color: #6a6a6a; color: white; }
+#rotate-button:hover, #coordinate-toggle:hover, #replay-toggle:hover { background-color: #555; }
+
+#replay-controls {
+    margin-top: 15px;
+    text-align: center;
+    background: #e4e4e4;
+    padding: 10px;
+    border-radius: 5px;
+    border: 2px solid #ccc;
+    width: 100%;
+    max-width: 420px;
+    box-sizing: border-box;
+}
+
+#replay-status { display: inline-block; margin-left: 10px; font-weight: bold; }
+
+#notation-panel {
+    width: 300px; 
+    height: 612px; 
+    background-color: #fff;
+    border: 4px solid #333;
+    border-radius: 5px;
+    padding: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+#notation-panel h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    text-align: center;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 5px;
+}
+
+#move-history-list {
+    flex-grow: 1; 
+    overflow-y: auto; 
+    padding-right: 5px; 
+    padding-left: 0; 
+    margin: 0;
+}
+
+.turn-entry { margin-bottom: 8px; padding: 5px; border-left: 3px solid #6a6a6a; }
+.turn-number { font-weight: bold; color: #333; margin-right: 5px; }
+.player-lava { color: #ff4500; }
+.player-water { color: #1e90ff; }
+.move-list { padding-left: 15px; font-size: 0.9em; margin: 0; }
+.move-list li { list-style-type: disc; margin-bottom: 2px; }
+
+#room-display {
+    font-size: 0.85em;
+    color: #666;
+    margin-top: -10px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+</style>
+
+<div id="game-area-wrapper">
+    <header>
+        <h1>Lava & Water</h1>
+        <div id="room-display">Room: <span id="room-code-val"></span></div>
+    </header>
+
+    <div id="game-info">
+        <div id="player-turn">Initializing Game...</div>
+        <div id="status-message">Loading pieces and board.</div>
+    </div>
+
+    <div id="board-and-notation">
+        <div id="left-captures-column">
+            <div id="top-captures" class="captures-container"></div>
+            <div id="bottom-captures" class="captures-container"></div>
+        </div>
+
+        <div id="board-wrapper">
+            <div id="game-board"></div>
+            <div id="pause-overlay">
+                <span>Game Paused</span>
+                <span style="font-size:0.6em; font-weight:normal; margin-top: 10px;">Waiting for opponent to connect</span>
+            </div>
+        </div>
+        <div id="notation-panel">
+            <h3>Move History</h3>
+            <div id="move-history-list"></div>
+        </div>
+    </div>
+
+    <div id="replay-controls" style="display: none;">
+        <button id="replay-start">|&lt;</button>
+        <button id="replay-prev">&lt; Prev</button>
+        <button id="replay-play">Play</button>
+        <button id="replay-speed">1x</button>
+        <button id="replay-next">Next &gt;</button>
+        <button id="replay-end">&gt;|</button>
+        <span id="replay-status">Move 0 / 0</span>
+    </div>
+
+    <div id="controls">
+        <button id="rotate-button">Rotate Board</button>
+        <button id="coordinate-toggle">Show Coordinates</button>
+        <button id="replay-toggle">Replay Mode</button>
+    </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+class LavaAndWaterGame {
+    constructor() {
+        this.board = Array.from({ length: 11 }, () => Array(7).fill(0)); 
+        this.LAVA = 1; 
+        this.WATER = 2; 
+        this.currentPlayer = this.LAVA;
+
+        this.colMap = { 'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, 'F': 5, 'G': 6 };
+        this.revColMap = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+
+        this.waterSources = [{ r: 2, c: 3 }];
+        this.lavaSources = [{ r: 9, c: 3 }];
+        this.lavaQueenings = 0;
+        this.waterQueenings = 0;
+
+        this.movesRemaining = 1; 
+        this.movesMadeInTurn = []; 
+        this.moveHistory = []; 
+        this.turnCounter = 1;
+        this.initializeMaterial();
+    }
+
+    initializeMaterial() {
+        for (let r = 1; r <= 10; r++) {
+            for (let c = 0; c < 7; c++) {
+                this.board[r][c] = 0;
+            }
+        }
+        
+        for (let r = 1; r <= 3; r++) {
+            for (let c = 0; c < 7; c++) {
+                this.board[r][c] = this.WATER;
+            }
+        }
+        
+        for (let r = 8; r <= 10; r++) {
+            for (let c = 0; c < 7; c++) {
+                this.board[r][c] = this.LAVA;
+            }
+        }
+
+        this.waterSources.forEach(s => { this.board[s.r][s.c] = this.WATER; });
+        this.lavaSources.forEach(s => { this.board[s.r][s.c] = this.LAVA; });
+    }
+    
+    getPlayerSources(playerColor) {
+        return playerColor === this.LAVA ? this.lavaSources : this.waterSources;
+    }
+    
+    isSource(r, c) {
+        const pieceColor = this.board[r][c];
+        if (pieceColor === 0) return false;
+        return this.getPlayerSources(pieceColor).some(s => s.r === r && s.c === c);
+    }
+    
+    getNormalPieces(color) {
+        const pieces = [];
+        for (let r = 1; r <= 10; r++) {
+            for (let c = 0; c < 7; c++) {
+                if (this.board[r][c] === color && !this.isSource(r, c)) pieces.push({ r, c });
+            }
+        }
+        return pieces;
+    }
+
+    posToCoord(posStr) {
+        const colStr = posStr[0].toUpperCase();
+        const row = parseInt(posStr.substring(1));
+        const col = this.colMap[colStr];
+        if (isNaN(row) || col === undefined || !this.isValidCoord(row, col)) throw new Error("Invalid format.");
+        return { r: row, c: col };
+    }
+
+    coordToPos(r, c) { return `${this.revColMap[c]}${r}`; }
+    isValidCoord(r, c) { return r >= 1 && r <= 10 && c >= 0 && c <= 6; }
+
+    getNeighbors(r, c) {
+        const neighbors = [];
+        for (const [dr, dc] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) {
+            const nr = r + dr, nc = c + dc;
+            if (this.isValidCoord(nr, nc)) neighbors.push({ r: nr, c: nc });
+        }
+        return neighbors;
+    }
+    
+    checkConnectivity(playerColor) {
+        const sources = this.getPlayerSources(playerColor);
+        const allNormalPieces = this.getNormalPieces(playerColor);
+        if (sources.length === 0) return allNormalPieces; 
+
+        const connected = new Set();
+        const queue = [...sources];
+        sources.forEach(s => connected.add(`${s.r},${s.c}`));
+
+        while (queue.length > 0) {
+            const { r, c } = queue.shift();
+            for (const { r: nr, c: nc } of this.getNeighbors(r, c)) {
+                const coordKey = `${nr},${nc}`;
+                if (this.board[nr][nc] === playerColor && !connected.has(coordKey)) {
+                    connected.add(coordKey);
+                    queue.push({ r: nr, c: nc });
+                }
+            }
+        }
+        return allNormalPieces.filter(piece => !connected.has(`${piece.r},${piece.c}`));
+    }
+
+    applyCaptures(lastMoveCoord, capturingColor) {
+        const { r, c } = lastMoveCoord;
+        const opponentColor = (3 - capturingColor);
+        const piecesToRemove = [];
+
+        for (const { r: nr, c: nc } of this.getNeighbors(r, c)) {
+            if (this.board[nr][nc] === opponentColor) {
+                const dr = nr - r, dc = nc - c; 
+                let r_curr = nr, c_curr = nc;
+                
+                while (this.isValidCoord(r_curr, c_curr) && this.board[r_curr][c_curr] === opponentColor) {
+                    if (!this.isSource(r_curr, c_curr)) piecesToRemove.push({ r: r_curr, c: c_curr });
+                    else break; 
+                    r_curr += dr; c_curr += dc;
+                }
+            }
+        }
+        
+        const uniqueKeys = new Set(piecesToRemove.map(p => `${p.r},${p.c}`));
+        return Array.from(uniqueKeys).map(k => {
+            const [r_coord, c_coord] = k.split(',').map(Number);
+            return { r: r_coord, c: c_coord };
+        });
+    }
+
+    testMoveForZeroNormalBlocks(r1, c1, r2, c2, pieceColor) {
+        const originalBoard1 = this.board[r1][c1];
+        const originalBoard2 = this.board[r2][c2]; 
+        const sources = this.getPlayerSources(pieceColor);
+        let originalSourceLocation = null;
+        let originalSourceIndex = -1;
+
+        if (this.isSource(r1, c1)) {
+            originalSourceIndex = sources.findIndex(s => s.r === r1 && s.c === c1);
+            if (originalSourceIndex !== -1) {
+                originalSourceLocation = { ...sources[originalSourceIndex] };
+                sources[originalSourceIndex] = { r: r2, c: c2 };
+            }
+        }
+
+        this.board[r2][c2] = originalBoard1;
+        this.board[r1][c1] = originalBoard2; 
+        
+        const allNormalPieces = this.getNormalPieces(pieceColor);
+        const isolated = this.checkConnectivity(pieceColor);
+        
+        this.board[r1][c1] = originalBoard1;
+        this.board[r2][c2] = originalBoard2;
+        if (originalSourceIndex !== -1) sources[originalSourceIndex] = originalSourceLocation;
+
+        return (allNormalPieces.length - isolated.length) === 0;
+    }
+
+    calculateLegalDestinations(r1, c1) {
+        const legalMoves = [];
+        const pieceColor = this.board[r1][c1];
+        if (pieceColor !== this.currentPlayer) return [];
+        
+        const startingPieceIsSource = this.isSource(r1, c1);
+        const startingPieceIsNormal = !startingPieceIsSource;
+
+        for (let r2 = 1; r2 <= 10; r2++) {
+            for (let c2 = 0; c2 < 7; c2++) {
+                if (r1 === r2 && c1 === c2) continue;
+
+                const targetColor = this.board[r2][c2];
+                let moveType = null;
+
+                if (targetColor === 0) {
+                    if (startingPieceIsNormal || startingPieceIsSource) moveType = 'move';
+                } else if (targetColor === pieceColor) {
+                    if (startingPieceIsSource) {
+                        if (this.isSource(r2, c2)) continue; 
+                        moveType = 'swap';
+                    }
+                }
+                
+                if (moveType) {
+                    if (startingPieceIsNormal && moveType === 'move') {
+                        this.board[r2][c2] = pieceColor;
+                        this.board[r1][c1] = 0; 
+                        const isolatedPieces = this.checkConnectivity(pieceColor);
+                        const isSelfIsolated = isolatedPieces.some(p => p.r === r2 && p.c === c2);
+                        this.board[r1][c1] = pieceColor;
+                        this.board[r2][c2] = 0;
+                        if (isSelfIsolated) continue;
+                    }
+
+                    if (this.getNormalPieces(pieceColor).length > 0) {
+                        if (this.testMoveForZeroNormalBlocks(r1, c1, r2, c2, pieceColor)) continue; 
+                    }
+
+                    legalMoves.push({ r: r2, c: c2, type: moveType });
+                }
+            }
+        }
+        return legalMoves;
+    }    
+
+    applyQueening(r, c, playerColor) {
+        const isQueeningRow = playerColor === this.LAVA ? r === 10 : r === 1;
+        if (isQueeningRow) {
+            const sources = this.getPlayerSources(playerColor);
+            if (!this.isSource(r, c)) { 
+                 sources.push({ r, c });
+                 if (playerColor === this.LAVA) this.lavaQueenings++;
+                 else this.waterQueenings++;
+                 return true;
+            }
+        }
+        return false;
+    }
+    
+    removeSource(color, r, c) {
+        const sources = this.getPlayerSources(color);
+        const index = sources.findIndex(s => s.r === r && s.c === c);
+        if (index > -1) {
+            sources.splice(index, 1);
+            this.board[r][c] = 0;
+        }
+    }
+
+    makeMove(startPosStr, endPosStr, isSwap = false) {
+        if (this.movesRemaining <= 0) return { success: false, message: "No moves remaining this turn." };
+        
+        let r1, c1, r2, c2;
+        try {
+            ({ r: r1, c: c1 } = this.posToCoord(startPosStr));
+            ({ r: r2, c: c2 } = this.posToCoord(endPosStr));
+        } catch (e) {
+            return { success: false, message: e.message };
+        }
+
+        const playerColor = this.currentPlayer;
+        const opponentColor = (3 - playerColor);
+        let status = { success: false, message: "Move successful.", captured: [], discarded: [], win: false, didDiscard: false };
+        
+        const pieceToMove = this.board[r1][c1];
+        const isMovingSource = this.isSource(r1, c1);
+        let originalSourceIndex = -1;
+        
+        if (isMovingSource) {
+            const sources = this.getPlayerSources(playerColor);
+            originalSourceIndex = sources.findIndex(s => s.r === r1 && s.c === c1);
+            if (originalSourceIndex !== -1) {
+                 this.getPlayerSources(playerColor)[originalSourceIndex] = { r: r2, c: c2 };
+            }
+        }
+        
+        if (isSwap) {
+            [this.board[r1][c1], this.board[r2][c2]] = [this.board[r2][c2], this.board[r1][c1]];
+            if (!isMovingSource) { 
+                 const targetSourceIndex = this.getPlayerSources(playerColor).findIndex(s => s.r === r2 && s.c === c2);
+                 if (targetSourceIndex !== -1) {
+                     this.getPlayerSources(playerColor)[targetSourceIndex] = { r: r1, c: c1 };
+                 }
+            }
+        } else {
+            this.board[r2][c2] = pieceToMove;
+            this.board[r1][c1] = 0;
+        }
+        
+        this.applyQueening(r2, c2, playerColor);
+        
+        const moveTypeNotation = isSwap ? '(S)' : '(M)';
+        this.movesMadeInTurn.push({ r: r2, c: c2, notation: `${startPosStr}-${endPosStr} ${moveTypeNotation}` });
+        this.movesRemaining--;
+        
+        if (this.movesRemaining <= 0) {
+            const allCaptured = [];
+            for (const { r, c } of this.movesMadeInTurn) {
+                const capturedCoords = this.applyCaptures({ r, c }, playerColor);
+                allCaptured.push(...capturedCoords);
+                
+                for (const { r: nr, c: nc } of this.getNeighbors(r, c)) {
+                    if (this.board[nr][nc] === opponentColor && this.isSource(nr, nc)) {
+                        this.removeSource(opponentColor, nr, nc);
+                        allCaptured.push({r: nr, c: nc});
+                    }
+                }
+            }
+
+            const uniqueCapturedKeys = new Set(allCaptured.map(p => `${p.r},${p.c}`));
+            const uniqueCapturedCoords = Array.from(uniqueCapturedKeys).map(k => {
+                const [r, c] = k.split(',').map(Number);
+                return { r, c };
+            });
+
+            for (const { r, c } of uniqueCapturedCoords) this.board[r][c] = 0; 
+            status.captured = uniqueCapturedCoords.map(c => this.coordToPos(c.r, c.c));
+
+            const playerDiscarded = this.checkConnectivity(playerColor);
+            status.discarded.push(...playerDiscarded.map(c => this.coordToPos(c.r, c.c)));
+            for (const { r, c } of playerDiscarded) this.board[r][c] = 0; 
+            
+            const opponentDiscarded = this.checkConnectivity(opponentColor);
+            status.discarded.push(...opponentDiscarded.map(c => this.coordToPos(c.r, c.c)));
+            for (const { r, c } of opponentDiscarded) this.board[r][c] = 0; 
+
+            status.didDiscard = ((uniqueCapturedCoords.length + playerDiscarded.length + opponentDiscarded.length) > 0);
+
+            const turnEntry = {
+                turn: this.turnCounter,
+                player: playerColor === this.LAVA ? 'Lava' : 'Water',
+                moves: this.movesMadeInTurn.map(m => m.notation),
+                captured: status.captured,
+                discarded: status.discarded
+            };
+            this.moveHistory.push(turnEntry);
+            
+            const opponentSources = this.getPlayerSources(opponentColor);
+            const opponentNormalPieces = this.getNormalPieces(opponentColor);
+
+            if (opponentSources.length === 0 || opponentNormalPieces.length === 0) {
+                status.win = true;
+                status.message = `${playerColor === this.LAVA ? 'Lava' : 'Water'} WINS!`;
+            } else {
+                this.currentPlayer = opponentColor;
+                this.movesRemaining = this.getPlayerSources(opponentColor).length;
+                this.movesMadeInTurn = []; 
+                this.turnCounter++; 
+                status.message += ` Turn over. It is now ${this.currentPlayer === this.LAVA ? 'Lava' : 'Water'}'s turn.`;
+            }
+        } else {
+            status.message += ` Moves remaining: ${this.movesRemaining}`;
+        }
+
+        status.success = true;
+        return status;
+    }
+}
+</script>
+
+<script>
+let counter = 0;
+let myRole = 'spectator';
+let lavaConnected = false;
+let waterConnected = false;
+let isRotated = false;
+let isReplayMode = false;
+let replayMovesList = [];
+let currentReplayIndex = 0;
+let selectedStartPos = null; 
+let gameOver = false; 
+let showCoordinates = false; 
+
+let boardElement, statusElement, playerTurnElement, rotateButton, coordinateToggle, moveHistoryList;
+let replayToggleBtn, replayControls, replayStartBtn, replayPrevBtn, replayPlayBtn, replaySpeedBtn, replayNextBtn, replayEndBtn, replayStatusText;
+let pauseOverlay;
+
+let isDoubleSpeed = false;
+let playIntervalId = null;
+
+const socket = io({ auth: { serverOffset: 0 } });
+const roomCode = prompt("Enter room code to join:") || "default-room";
+socket.emit('join-game', roomCode);
+
+socket.on('role-assigned', (role) => {
+    myRole = role;
+    if (!boardElement) return;
+
+    if (myRole === 'water') {
+        isRotated = false; // Water starts at the bottom by default, so no rotation needed
+        boardElement.classList.remove('rotated-board');
+        boardElement.classList.add('pov-water');
+    } else if (myRole === 'lava') {
+        isRotated = true; // Lava is at the top by default, so rotate to bring Lava to the bottom
+        boardElement.classList.add('rotated-board');
+        boardElement.classList.add('pov-lava');
+    }
+    renderBoard();
+    updateCaptures();
+});
+
+socket.on('room-status', (status) => {
+    lavaConnected = status.lavaConnected;
+    waterConnected = status.waterConnected;
+    if (typeof renderBoard === 'function') {
+        renderBoard();
+    }
+});
+
+function sendPlayerMove(startPosStr, endPosStr, isSwap) {
+    const clientOffset = `${socket.id}-${counter++}`;
+    const moveData = { startPosStr, endPosStr, isSwap };
+    socket.emit('player-move', { roomCode, moveData, clientOffset });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const roomCodeValEl = document.getElementById('room-code-val');
+    if (roomCodeValEl) roomCodeValEl.textContent = roomCode;
+
+    if (typeof LavaAndWaterGame === 'undefined') return;
+    window.game = new LavaAndWaterGame(); 
+    
+    boardElement = document.getElementById('game-board');
+    statusElement = document.getElementById('status-message');
+    playerTurnElement = document.getElementById('player-turn');
+    pauseOverlay = document.getElementById('pause-overlay');
+    rotateButton = document.getElementById('rotate-button');
+    coordinateToggle = document.getElementById('coordinate-toggle'); 
+    moveHistoryList = document.getElementById('move-history-list');
+    
+    replayToggleBtn = document.getElementById('replay-toggle');
+    replayControls = document.getElementById('replay-controls');
+    replayStartBtn = document.getElementById('replay-start');
+    replayPrevBtn = document.getElementById('replay-prev');
+    replayPlayBtn = document.getElementById('replay-play');
+    replaySpeedBtn = document.getElementById('replay-speed');
+    replayNextBtn = document.getElementById('replay-next');
+    replayEndBtn = document.getElementById('replay-end');
+    replayStatusText = document.getElementById('replay-status');
+
+    function createPieceElement(r, c) {
+        const pieceValue = game.board[r][c];
+        const pieceElement = document.createElement('div');
+        pieceElement.classList.add('piece');
+        pieceElement.setAttribute('draggable', true);
+        
+        if (pieceValue === game.LAVA) {
+            pieceElement.classList.add('lava');
+            if (game.isSource(r, c)) pieceElement.classList.add('lava-source');
+        } else if (pieceValue === game.WATER) {
+            pieceElement.classList.add('water');
+            if (game.isSource(r, c)) pieceElement.classList.add('water-source');
+        }
+        pieceElement.addEventListener('dragstart', handleDragStart);
+        return pieceElement;
+    }
+
+    function toggleBoardRotation() {
+        isRotated = !isRotated;
+        if (boardElement) {
+            boardElement.classList.toggle('rotated-board', isRotated);
+        }
+        renderBoard();
+        updateCaptures();
+    }
+
+    function toggleCoordinates() {
+        showCoordinates = !showCoordinates;
+        if (boardElement) boardElement.classList.toggle('show-coordinates', showCoordinates);
+    }
+    
+    function updateStatus(message = "") {
+        if (!isReplayMode && (!lavaConnected || !waterConnected)) {
+            if (pauseOverlay) pauseOverlay.style.display = 'flex';
+            if (playerTurnElement) {
+                playerTurnElement.innerHTML = "WAITING FOR PLAYERS";
+                playerTurnElement.style.color = "#888";
+            }
+            if (statusElement) statusElement.textContent = "Game paused. Waiting for Lava and Water to connect...";
+            return; 
+        } else {
+            if (pauseOverlay) pauseOverlay.style.display = 'none';
+        }
+
+        if (isReplayMode) {
+            if (playerTurnElement) {
+                playerTurnElement.innerHTML = "REPLAY MODE";
+                playerTurnElement.style.color = "#555";
+            }
+            if (statusElement) statusElement.textContent = `Viewing move ${currentReplayIndex} of ${replayMovesList.length}`;
+            return;
+        }
+
+        const player = game.currentPlayer === game.LAVA ? "Lava" : "Water";
+        const color = game.currentPlayer === game.LAVA ? "#ff9900" : "#00bfff";
+        
+        if (gameOver) {
+            if (playerTurnElement) {
+                playerTurnElement.innerHTML = `GAME OVER`;
+                playerTurnElement.style.color = 'red';
+            }
+            if (statusElement) statusElement.textContent = message;
+            return;
+        }
+
+        if (myRole === 'spectator') {
+            if (playerTurnElement) {
+                playerTurnElement.innerHTML = `Spectating (${player}'s Turn)`;
+                playerTurnElement.style.color = color;
+            }
+            if (statusElement) statusElement.textContent = message || "You are spectating this match.";
+            return;
+        }
+
+        if (playerTurnElement) {
+            playerTurnElement.innerHTML = `${player}'s Turn (${game.movesRemaining} moves left)`;
+            playerTurnElement.style.color = color;
+        }
+        if (statusElement) statusElement.textContent = message;
+    }
+
+    function clearHighlights() {
+        document.querySelectorAll('.highlight-valid').forEach(el => el.classList.remove('highlight-valid'));
+        document.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
+    }
+
+    function highlightValidMoves(r, c) {
+        if (!lavaConnected || !waterConnected) return; 
+        const pieceColor = game.board[r][c];
+        if (myRole === 'lava' && pieceColor === game.WATER) return;
+        if (myRole === 'water' && pieceColor === game.LAVA) return;
+
+        const startCell = document.querySelector(`.cell[data-r='${r}'][data-c='${c}']`);
+        if (startCell) startCell.classList.add('selected');
+        game.calculateLegalDestinations(r, c).forEach(m => {
+            const targetCell = document.querySelector(`.cell[data-r='${m.r}'][data-c='${m.c}']`);
+            if (targetCell) targetCell.classList.add('highlight-valid');
+        });
+    }
+
+    function updateCaptures() {
+        const expectedLavaSources = 1 + game.lavaQueenings;
+        const expectedLavaNormal = 20 - game.lavaQueenings;
+        const currentLavaSources = game.lavaSources.length;
+        const currentLavaNormal = game.getNormalPieces(game.LAVA).length;
+        
+        const deadLavaSources = expectedLavaSources - currentLavaSources;
+        const deadLavaNormal = expectedLavaNormal - currentLavaNormal;
+
+        const expectedWaterSources = 1 + game.waterQueenings;
+        const expectedWaterNormal = 20 - game.waterQueenings;
+        const currentWaterSources = game.waterSources.length;
+        const currentWaterNormal = game.getNormalPieces(game.WATER).length;
+        
+        const deadWaterSources = expectedWaterSources - currentWaterSources;
+        const deadWaterNormal = expectedWaterNormal - currentWaterNormal;
+
+        const topContainer = document.getElementById('top-captures');
+        const bottomContainer = document.getElementById('bottom-captures');
+        if (!topContainer || !bottomContainer) return;
+
+        topContainer.innerHTML = '';
+        bottomContainer.innerHTML = '';
+
+        const createCapPiece = (type, isSource) => {
+            const p = document.createElement('div');
+            p.classList.add('captured-piece', type);
+            if (isSource) p.classList.add('source');
+            return p;
+        };
+
+        const waterCaptures = []; 
+        for (let i = 0; i < deadWaterNormal; i++) waterCaptures.push(createCapPiece('captured-water', false));
+        for (let i = 0; i < deadWaterSources; i++) waterCaptures.push(createCapPiece('captured-water', true));
+
+        const lavaCaptures = []; 
+        for (let i = 0; i < deadLavaNormal; i++) lavaCaptures.push(createCapPiece('captured-lava', false));
+        for (let i = 0; i < deadLavaSources; i++) lavaCaptures.push(createCapPiece('captured-lava', true));
+
+        let topElements, bottomElements;
+        if (isRotated) {
+            bottomElements = lavaCaptures;
+            topElements = waterCaptures;
+        } else {
+            bottomElements = waterCaptures;
+            topElements = lavaCaptures;
+        }
+
+        topElements.forEach(el => topContainer.appendChild(el));
+        bottomElements.forEach(el => bottomContainer.appendChild(el));
+    }
+
+    window.renderBoard = function(winStatus = { win: false, winner: 0, message: '' }) {
+        if (!boardElement) return;
+        boardElement.innerHTML = '';
+        gameOver = winStatus.win;
+        
+        boardElement.classList.toggle('show-coordinates', showCoordinates);
+        boardElement.classList.toggle('replay-mode', isReplayMode);
+        boardElement.classList.toggle('rotated-board', isRotated);
+
+        for (let r = 10; r >= 1; r--) { 
+            for (let c = 0; c < 7; c++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.dataset.r = r;
+                cell.dataset.c = c;
+                
+                if (game.board[r][c] !== 0) {
+                    cell.appendChild(createPieceElement(r, c));
+                }
+                
+                const coordLabel = document.createElement('div');
+                coordLabel.classList.add('coord-label');
+                coordLabel.textContent = game.coordToPos(r, c); 
+                cell.appendChild(coordLabel);
+
+                cell.addEventListener('dragover', handleDragOver);
+                cell.addEventListener('drop', handleDrop);
+                cell.addEventListener('dragenter', (e) => e.target.closest('.cell').classList.add('drag-hover'));
+                cell.addEventListener('dragleave', (e) => e.target.closest('.cell').classList.remove('drag-hover'));
+                cell.addEventListener('click', handleCellClick);
+                
+                boardElement.appendChild(cell);
+            }
+        }
+        updateStatus(winStatus.message);
+        updateMoveHistoryDisplay();
+
+        if (selectedStartPos && !isReplayMode) {
+             const { r, c } = selectedStartPos;
+             if (game.board[r][c] === game.currentPlayer) {
+                highlightValidMoves(r, c);
+             } else {
+                selectedStartPos = null;
+             }
+        }
+        
+        updateCaptures();
+    }
+
+    function handleCellClick(event) {
+        if (gameOver || isReplayMode || !lavaConnected || !waterConnected) return;
+        
+        if (myRole === 'spectator' || (myRole === 'lava' && game.currentPlayer !== game.LAVA) || (myRole === 'water' && game.currentPlayer !== game.WATER)) {
+            updateStatus("Not your turn, you are spectating, or players are missing!");
+            return;
+        }
+        
+        const targetCell = event.target.closest('.cell');
+        if (!targetCell) return;
+        
+        const r = parseInt(targetCell.dataset.r);
+        const c = parseInt(targetCell.dataset.c);
+        if (isNaN(r) || isNaN(c)) return; 
+        
+        const posStr = game.coordToPos(r, c);
+        const currentPieceColor = game.board[r][c];
+
+        if (selectedStartPos === null) {
+            if (currentPieceColor === game.currentPlayer) {
+                selectedStartPos = { r, c, posStr };
+                clearHighlights();
+                highlightValidMoves(r, c);
+                updateStatus(`Selected ${posStr}.`);
+            } else {
+                clearHighlights();
+                updateStatus("Select one of your own pieces.");
+            }
+        } else {
+            if (r === selectedStartPos.r && c === selectedStartPos.c) {
+                selectedStartPos = null;
+                clearHighlights();
+                updateStatus("Deselected.");
+                return;
+            }
+
+            const legalTargets = game.calculateLegalDestinations(selectedStartPos.r, selectedStartPos.c);
+            const moveTarget = legalTargets.find(target => target.r === r && target.c === c);
+            
+            if (moveTarget) {
+                const startPosStr = selectedStartPos.posStr;
+                clearHighlights();
+                selectedStartPos = null; 
+
+                const isSwap = (moveTarget.type === 'swap');
+                const result = game.makeMove(startPosStr, game.coordToPos(r, c), isSwap);
+                sendPlayerMove(startPosStr, game.coordToPos(r, c), isSwap);
+                renderBoard({ win: result.win, winner: result.win ? (3 - game.currentPlayer) : 0, message: result.message });
+            } else {
+                if (currentPieceColor === game.currentPlayer) {
+                    selectedStartPos = { r, c, posStr };
+                    clearHighlights();
+                    highlightValidMoves(r, c);
+                    updateStatus(`Selected ${posStr}.`);
+                } else {
+                    selectedStartPos = null;
+                    clearHighlights();
+                    updateStatus("Deselected.");
+                    renderBoard();
+                }
+            }
+        }
+    }
+
+    function handleDragStart(event) {
+        if (gameOver || isReplayMode || !lavaConnected || !waterConnected) {
+            event.preventDefault();
+            return;
+        }
+        if (myRole === 'spectator' || (myRole === 'lava' && game.currentPlayer !== game.LAVA) || (myRole === 'water' && game.currentPlayer !== game.WATER)) {
+            event.preventDefault();
+            updateStatus("Not your turn or you are spectating!");
+            return;
+        }
+        
+        const piece = event.target.closest('.piece');
+        const startCell = piece.closest('.cell');
+        if (!piece || !startCell) return;
+
+        const r = parseInt(startCell.dataset.r);
+        const c = parseInt(startCell.dataset.c);
+        
+        if (game.board[r][c] !== game.currentPlayer || (myRole === 'lava' && game.board[r][c] === game.WATER) || (myRole === 'water' && game.board[r][c] === game.LAVA)) {
+            event.preventDefault();
+            return;
+        }
+
+        clearHighlights();
+        selectedStartPos = { r, c, posStr: game.coordToPos(r, c) };
+        event.dataTransfer.setData('text/plain', selectedStartPos.posStr);
+        setTimeout(() => piece.classList.add('dragging'), 0); 
+        highlightValidMoves(r, c);
+    }
+    
+    function handleDragOver(event) {
+        event.preventDefault();
+        const targetCell = event.target.closest('.cell');
+        if (targetCell && targetCell.classList.contains('highlight-valid')) {
+            event.dataTransfer.dropEffect = 'move';
+        } else {
+            event.dataTransfer.dropEffect = 'none';
+        }
+    }
+
+    function handleDrop(event) {
+        event.preventDefault();
+        if (isReplayMode || !lavaConnected || !waterConnected) return;
+        
+        const targetCell = event.target.closest('.cell');
+        if (targetCell) targetCell.classList.remove('drag-hover');
+        
+        if (!selectedStartPos || !targetCell) {
+            document.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging'));
+            clearHighlights();
+            selectedStartPos = null;
+            return;
+        }
+
+        const startPosStr = selectedStartPos.posStr;
+        const endR = parseInt(targetCell.dataset.r);
+        const endC = parseInt(targetCell.dataset.c);
+        const endPosStr = game.coordToPos(endR, endC);
+
+        const legalTargets = game.calculateLegalDestinations(selectedStartPos.r, selectedStartPos.c);
+        const moveTarget = legalTargets.find(target => target.r === endR && target.c === endC);
+        
+        document.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging'));
+        selectedStartPos = null;
+
+        if (moveTarget) {
+            const isSwap = (moveTarget.type === 'swap');
+            const result = game.makeMove(startPosStr, endPosStr, isSwap);
+            sendPlayerMove(startPosStr, endPosStr, isSwap);
+            renderBoard({ win: result.win, winner: result.win ? (3 - game.currentPlayer) : 0, message: result.message });
+        } else {
+            updateStatus("Invalid move.");
+            renderBoard();
+        }
+    }
+
+    function updateMoveHistoryDisplay() {
+        if (!moveHistoryList) return;
+        moveHistoryList.innerHTML = ''; 
+
+        game.moveHistory.forEach(entry => {
+            moveHistoryList.appendChild(createTurnEntry(entry, false));
+        });
+        
+        if (!isReplayMode && (game.movesMadeInTurn.length > 0 || game.movesRemaining > 0)) {
+            const entry = {
+                turn: game.turnCounter,
+                player: game.currentPlayer === game.LAVA ? 'Lava' : 'Water',
+                moves: game.movesMadeInTurn.map(m => m.notation),
+                captured: [], 
+                discarded: []
+            };
+            moveHistoryList.appendChild(createTurnEntry(entry, true));
+        }
+        moveHistoryList.scrollTop = moveHistoryList.scrollHeight;
+    }
+
+    function createTurnEntry(entry, isInProgress) {
+        const turnDiv = document.createElement('div');
+        turnDiv.classList.add('turn-entry');
+        if (isInProgress) turnDiv.style.backgroundColor = '#f4f4f4'; 
+        
+        const playerClass = entry.player === 'Lava' ? 'player-lava' : 'player-water';
+        const header = document.createElement('div');
+        header.innerHTML = `<span class="turn-number">Turn ${entry.turn}:</span> <span class="${playerClass}">${entry.player}</span>`;
+        turnDiv.appendChild(header);
+
+        const moveList = document.createElement('ul');
+        moveList.classList.add('move-list');
+        entry.moves.forEach(notation => {
+            const li = document.createElement('li');
+            li.textContent = notation;
+            moveList.appendChild(li);
+        });
+        turnDiv.appendChild(moveList);
+        return turnDiv;
+    }
+
+    function buildFlatMovesList() {
+        replayMovesList = [];
+        game.moveHistory.forEach(turn => {
+            turn.moves.forEach(notationStr => {
+                const parts = notationStr.split(' ');
+                const [startPosStr, endPosStr] = parts[0].split('-');
+                const isSwap = parts[1] === '(S)';
+                replayMovesList.push({ startPosStr, endPosStr, isSwap });
+            });
+        });
+    }
+
+    function loadReplayState(targetIndex) {
+        game.board = Array.from({ length: 11 }, () => Array(7).fill(0));
+        game.waterSources = [{ r: 2, c: 3 }];
+        game.lavaSources = [{ r: 9, c: 3 }];
+        game.lavaQueenings = 0;
+        game.waterQueenings = 0;
+        game.currentPlayer = game.LAVA;
+        game.movesRemaining = 1;
+        game.movesMadeInTurn = [];
+        game.turnCounter = 1;
+        game.initializeMaterial();
+
+        for (let i = 0; i < targetIndex; i++) {
+            const m = replayMovesList[i];
+            game.makeMove(m.startPosStr, m.endPosStr, m.isSwap);
+        }
+
+        currentReplayIndex = targetIndex;
+        if (replayStatusText) replayStatusText.textContent = `Move ${currentReplayIndex} / ${replayMovesList.length}`;
+        renderBoard();
+    }
+
+    function toggleReplayPlay() {
+        if (!playIntervalId) {
+            replayPlayBtn.textContent = 'Pause';
+            const speed = isDoubleSpeed ? 500 : 1000;
+            
+            playIntervalId = setInterval(() => {
+                if (currentReplayIndex < replayMovesList.length) {
+                    loadReplayState(currentReplayIndex + 1);
+                } else {
+                    clearInterval(playIntervalId);
+                    playIntervalId = null;
+                    replayPlayBtn.textContent = 'Play';
+                }
+            }, speed);
+        } else {
+            clearInterval(playIntervalId);
+            playIntervalId = null;
+            replayPlayBtn.textContent = 'Play';
+        }
+    }
+
+    function toggleReplaySpeed() {
+        isDoubleSpeed = !isDoubleSpeed;
+        if (replaySpeedBtn) replaySpeedBtn.textContent = isDoubleSpeed ? '2x' : '1x';
+
+        if (playIntervalId) {
+            clearInterval(playIntervalId);
+            playIntervalId = null;
+            toggleReplayPlay();
+        }
+    }
+
+    function toggleReplayMode() {
+        isReplayMode = !isReplayMode;
+        if (isReplayMode) {
+            buildFlatMovesList();
+            if (replayControls) replayControls.style.display = 'block';
+            if (replayToggleBtn) replayToggleBtn.textContent = 'Exit Replay';
+            loadReplayState(0);
+        } else {
+            if (playIntervalId) { clearInterval(playIntervalId); playIntervalId = null; }
+            if (replayPlayBtn) replayPlayBtn.textContent = 'Play';
+            if (replayControls) replayControls.style.display = 'none';
+            if (replayToggleBtn) replayToggleBtn.textContent = 'Replay Mode';
+            
+            game = new LavaAndWaterGame();
+            socket.emit('join-game', roomCode); 
+            renderBoard();
+        }
+    }
+
+    if (rotateButton) rotateButton.addEventListener('click', toggleBoardRotation);
+    if (coordinateToggle) coordinateToggle.addEventListener('click', toggleCoordinates);
+    if (replayToggleBtn) replayToggleBtn.addEventListener('click', toggleReplayMode);
+    
+    if (replayStartBtn) replayStartBtn.addEventListener('click', () => { loadReplayState(0); });
+    if (replayPrevBtn) replayPrevBtn.addEventListener('click', () => { if (currentReplayIndex > 0) loadReplayState(currentReplayIndex - 1); });
+    if (replayPlayBtn) replayPlayBtn.addEventListener('click', toggleReplayPlay);
+    if (replaySpeedBtn) replaySpeedBtn.addEventListener('click', toggleReplaySpeed);
+    if (replayNextBtn) replayNextBtn.addEventListener('click', () => { if (currentReplayIndex < replayMovesList.length) loadReplayState(currentReplayIndex + 1); });
+    if (replayEndBtn) replayEndBtn.addEventListener('click', () => { loadReplayState(replayMovesList.length); });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        const key = e.key.toLowerCase();
+        if (key === 'r') {
+            if (rotateButton) toggleBoardRotation();
+        } else if (key === 'p') {
+            if (replayToggleBtn) toggleReplayMode();
+        }
+    });
+
+    socket.on('opponent-move', (moveData, serverOffset) => {
+        if (!isReplayMode && typeof game !== 'undefined') {
+            const result = game.makeMove(moveData.startPosStr, moveData.endPosStr, moveData.isSwap);
+            renderBoard({ win: result.win, winner: result.win ? (3 - game.currentPlayer) : 0, message: result.message });
+        }
+        socket.auth.serverOffset = serverOffset;
+    });
+
+    renderBoard();
+});
+</script>
