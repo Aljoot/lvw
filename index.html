@@ -517,9 +517,6 @@ applyQueening(r, c, playerColor) {
                  sources.push({ r, c });
                  if (playerColor === this.LAVA) this.lavaQueenings++;
                  else this.waterQueenings++;
-                 
-                 // Dynamically increase moves remaining for this turn immediately upon queening
-                 this.movesRemaining++;
                  return true;
             }
         }
