@@ -120,7 +120,7 @@ class ServerLavaAndWaterGame {
     }
 
 applyQueening(r, c, playerColor) {
-        const isQueeningRow = playerColor === this.LAVA ? r === 10 : r === 1;
+        const isQueeningRow = playerColor === this.LAVA ? r === 1 : r === 10;
         if (isQueeningRow) {
             const sources = this.getPlayerSources(playerColor);
             if (!this.isSource(r, c)) { 
