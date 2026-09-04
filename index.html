@@ -572,7 +572,10 @@ applyQueening(r, c, playerColor) {
             this.board[r1][c1] = 0;
         }
         
-        this.applyQueening(r2, c2, playerColor);
+   this.applyQueening(r2, c2, playerColor);
+        if (isSwap) {
+            this.applyQueening(r1, c1, playerColor);
+        }
         
         const moveTypeNotation = isSwap ? '(S)' : '(M)';
         this.movesMadeInTurn.push({ r: r2, c: c2, notation: `${startPosStr}-${endPosStr} ${moveTypeNotation}` });
