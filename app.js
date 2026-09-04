@@ -119,7 +119,7 @@ class ServerLavaAndWaterGame {
         });
     }
 
-    applyQueening(r, c, playerColor) {
+applyQueening(r, c, playerColor) {
         const isQueeningRow = playerColor === this.LAVA ? r === 10 : r === 1;
         if (isQueeningRow) {
             const sources = this.getPlayerSources(playerColor);
@@ -127,7 +127,6 @@ class ServerLavaAndWaterGame {
                  sources.push({ r, c });
                  if (playerColor === this.LAVA) this.lavaQueenings++;
                  else this.waterQueenings++;
-                 this.movesRemaining++;
                  return true;
             }
         }
