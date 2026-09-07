@@ -310,8 +310,8 @@ class LavaAndWaterGame {
         this.colMap = { 'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, 'F': 5, 'G': 6 };
         this.revColMap = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
 
-        // Lava is now initialized on rows 1-3, so its source is at row 2
-        // Water is now initialized on rows 8-10, so its source is at row 9
+        // Lava is initialized on rows 1-3 (Bottom), source at row 2
+        // Water is initialized on rows 8-10 (Top), source at row 9
         this.lavaSources = [{ r: 2, c: 3 }];
         this.waterSources = [{ r: 9, c: 3 }];
         this.lavaQueenings = 0;
@@ -511,8 +511,6 @@ class LavaAndWaterGame {
     }    
 
     applyQueening(r, c, playerColor) {
-        // Lava starts at bottom (1) and queens at top (10)
-        // Water starts at top (10) and queens at bottom (1)
         const isQueeningRow = playerColor === this.LAVA ? r === 10 : r === 1;
         if (isQueeningRow) {
             const sources = this.getPlayerSources(playerColor);
@@ -887,18 +885,14 @@ document.addEventListener('DOMContentLoaded', () => {
         boardElement.classList.toggle('replay-mode', isReplayMode);
         boardElement.classList.toggle('rotated-board', isRotated);
 
-        // Lava POV (isRotated = true): Lava is at bottom. Row 10 top, Row 1 bottom. Col A(0) left, G(6) right.
-        // Water POV (isRotated = false): Water is at bottom. Row 1 top, Row 10 bottom. Col G(6) left, A(0) right.
-        const startRow = isRotated ? 10 : 1;
-        const endRow = isRotated ? 1 : 10;
-        const rowStep = isRotated ? -1 : 1;
+        // Explicitly declare rendering loops based on perspective to avoid coordinate snags.
+        // For Lava POV (isRotated = true): Top row is 10, Bottom row is 1. Left col is A(0), Right is G(6).
+        // For Water POV (isRotated = false): Top row is 1, Bottom row is 10. Left col is G(6), Right is A(0).
+        let rowsToRender = isRotated ? [10, 9, 8, 7, 6, 5, 4, 3, 2, 1] : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        let colsToRender = isRotated ? [0, 1, 2, 3, 4, 5, 6] : [6, 5, 4, 3, 2, 1, 0];
 
-        const startCol = isRotated ? 0 : 6;
-        const endCol = isRotated ? 6 : 0;
-        const colStep = isRotated ? 1 : -1;
-
-        for (let r = startRow; isRotated ? r >= endRow : r <= endRow; r += rowStep) { 
-            for (let c = startCol; isRotated ? c <= endCol : c >= endCol; c += colStep) {
+        for (let r of rowsToRender) { 
+            for (let c of colsToRender) {
                 const cell = document.createElement('div');
                 cell.classList.add('cell');
                 cell.dataset.r = r;
