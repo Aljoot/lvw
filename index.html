@@ -1143,37 +1143,43 @@ document.addEventListener('DOMContentLoaded', () => {
         renderBoard();
     }
 
-    function toggleReplayPlay() {
-        if (!playIntervalId) {
-            replayPlayBtn.textContent = 'Pause';
-            const speed = isDoubleSpeed ? 500 : 1000;
-            
-            playIntervalId = setInterval(() => {
-                if (currentReplayIndex < replayMovesList.length) {
-                    loadReplayState(currentReplayIndex + 1);
-                } else {
-                    clearInterval(playIntervalId);
-                    playIntervalId = null;
-                    replayPlayBtn.textContent = 'Play';
-                }
-            }, speed);
-        } else {
-            clearInterval(playIntervalId);
-            playIntervalId = null;
-            replayPlayBtn.textContent = 'Play';
-        }
-    }
+let speeds = [1, 2, 3, 5, 10];
+let speedIndex = 0;
+let currentSpeedFactor = speeds[speedIndex];
 
-    function toggleReplaySpeed() {
-        isDoubleSpeed = !isDoubleSpeed;
-        if (replaySpeedBtn) replaySpeedBtn.textContent = isDoubleSpeed ? '2x' : '1x';
-
-        if (playIntervalId) {
-            clearInterval(playIntervalId);
-            playIntervalId = null;
-            toggleReplayPlay();
-        }
+function toggleReplayPlay() {
+    if (!playIntervalId) {
+        replayPlayBtn.textContent = 'Pause';
+        const speed = 1000 / currentSpeedFactor;
+        
+        playIntervalId = setInterval(() => {
+            if (currentReplayIndex < replayMovesList.length) {
+                loadReplayState(currentReplayIndex + 1);
+            } else {
+                clearInterval(playIntervalId);
+                playIntervalId = null;
+                replayPlayBtn.textContent = 'Play';
+            }
+        }, speed);
+    } else {
+        clearInterval(playIntervalId);
+        playIntervalId = null;
+        replayPlayBtn.textContent = 'Play';
     }
+}
+
+function toggleReplaySpeed() {
+    speedIndex = (speedIndex + 1) % speeds.length;
+    currentSpeedFactor = speeds[speedIndex];
+    
+    if (replaySpeedBtn) replaySpeedBtn.textContent = currentSpeedFactor + 'x';
+
+    if (playIntervalId) {
+        clearInterval(playIntervalId);
+        playIntervalId = null;
+        toggleReplayPlay();
+    }
+}
 
     function toggleReplayMode() {
         isReplayMode = !isReplayMode;
