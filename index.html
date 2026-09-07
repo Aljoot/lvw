@@ -124,9 +124,6 @@ body {
 #game-board.pov-water { border-color: #99d6ff; }
 #game-board.replay-mode { filter: brightness(0.65) saturate(0.4); }
 
-.rotated-board { transform: rotate(180deg); }
-.rotated-board .cell { transform: rotate(-180deg); }
-
 .cell {
     width: 60px;
     height: 60px;
@@ -313,8 +310,10 @@ class LavaAndWaterGame {
         this.colMap = { 'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, 'F': 5, 'G': 6 };
         this.revColMap = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
 
-        this.waterSources = [{ r: 2, c: 3 }];
-        this.lavaSources = [{ r: 9, c: 3 }];
+        // Lava is now initialized on rows 1-3, so its source is at row 2
+        // Water is now initialized on rows 8-10, so its source is at row 9
+        this.lavaSources = [{ r: 2, c: 3 }];
+        this.waterSources = [{ r: 9, c: 3 }];
         this.lavaQueenings = 0;
         this.waterQueenings = 0;
 
@@ -332,20 +331,22 @@ class LavaAndWaterGame {
             }
         }
         
+        // Lava starts on the bottom rows (1 to 3)
         for (let r = 1; r <= 3; r++) {
-            for (let c = 0; c < 7; c++) {
-                this.board[r][c] = this.WATER;
-            }
-        }
-        
-        for (let r = 8; r <= 10; r++) {
             for (let c = 0; c < 7; c++) {
                 this.board[r][c] = this.LAVA;
             }
         }
+        
+        // Water starts on the top rows (8 to 10)
+        for (let r = 8; r <= 10; r++) {
+            for (let c = 0; c < 7; c++) {
+                this.board[r][c] = this.WATER;
+            }
+        }
 
-        this.waterSources.forEach(s => { this.board[s.r][s.c] = this.WATER; });
         this.lavaSources.forEach(s => { this.board[s.r][s.c] = this.LAVA; });
+        this.waterSources.forEach(s => { this.board[s.r][s.c] = this.WATER; });
     }
     
     getPlayerSources(playerColor) {
@@ -509,8 +510,10 @@ class LavaAndWaterGame {
         return legalMoves;
     }    
 
-applyQueening(r, c, playerColor) {
-        const isQueeningRow = playerColor === this.LAVA ? r === 1 : r === 10;
+    applyQueening(r, c, playerColor) {
+        // Lava starts at bottom (1) and queens at top (10)
+        // Water starts at top (10) and queens at bottom (1)
+        const isQueeningRow = playerColor === this.LAVA ? r === 10 : r === 1;
         if (isQueeningRow) {
             const sources = this.getPlayerSources(playerColor);
             if (!this.isSource(r, c)) { 
@@ -572,7 +575,7 @@ applyQueening(r, c, playerColor) {
             this.board[r1][c1] = 0;
         }
         
-   this.applyQueening(r2, c2, playerColor);
+        this.applyQueening(r2, c2, playerColor);
         if (isSwap) {
             this.applyQueening(r1, c1, playerColor);
         }
@@ -675,11 +678,11 @@ socket.on('role-assigned', (role) => {
     if (!boardElement) return;
 
     if (myRole === 'water') {
-        isRotated = false; // Water starts at the bottom by default, so no rotation needed
+        isRotated = false;
         boardElement.classList.remove('rotated-board');
         boardElement.classList.add('pov-water');
     } else if (myRole === 'lava') {
-        isRotated = true; // Lava is at the top by default, so rotate to bring Lava to the bottom
+        isRotated = true;
         boardElement.classList.add('rotated-board');
         boardElement.classList.add('pov-lava');
     }
@@ -745,9 +748,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function toggleBoardRotation() {
         isRotated = !isRotated;
-        if (boardElement) {
-            boardElement.classList.toggle('rotated-board', isRotated);
-        }
         renderBoard();
         updateCaptures();
     }
@@ -887,8 +887,18 @@ document.addEventListener('DOMContentLoaded', () => {
         boardElement.classList.toggle('replay-mode', isReplayMode);
         boardElement.classList.toggle('rotated-board', isRotated);
 
-        for (let r = 10; r >= 1; r--) { 
-            for (let c = 0; c < 7; c++) {
+        // Lava POV (isRotated = true): Lava is at bottom. Row 10 top, Row 1 bottom. Col A(0) left, G(6) right.
+        // Water POV (isRotated = false): Water is at bottom. Row 1 top, Row 10 bottom. Col G(6) left, A(0) right.
+        const startRow = isRotated ? 10 : 1;
+        const endRow = isRotated ? 1 : 10;
+        const rowStep = isRotated ? -1 : 1;
+
+        const startCol = isRotated ? 0 : 6;
+        const endCol = isRotated ? 6 : 0;
+        const colStep = isRotated ? 1 : -1;
+
+        for (let r = startRow; isRotated ? r >= endRow : r <= endRow; r += rowStep) { 
+            for (let c = startCol; isRotated ? c <= endCol : c >= endCol; c += colStep) {
                 const cell = document.createElement('div');
                 cell.classList.add('cell');
                 cell.dataset.r = r;
@@ -1123,8 +1133,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function loadReplayState(targetIndex) {
         game.board = Array.from({ length: 11 }, () => Array(7).fill(0));
-        game.waterSources = [{ r: 2, c: 3 }];
-        game.lavaSources = [{ r: 9, c: 3 }];
+        game.waterSources = [{ r: 9, c: 3 }];
+        game.lavaSources = [{ r: 2, c: 3 }];
         game.lavaQueenings = 0;
         game.waterQueenings = 0;
         game.currentPlayer = game.LAVA;
