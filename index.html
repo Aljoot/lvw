@@ -188,8 +188,8 @@ button {
     transition: background-color 0.2s;
 }
 
-#rotate-button, #coordinate-toggle, #replay-toggle { background-color: #6a6a6a; color: white; }
-#rotate-button:hover, #coordinate-toggle:hover, #replay-toggle:hover { background-color: #555; }
+#rotate-button, #coordinate-toggle, #replay-toggle, #rules-toggle { background-color: #6a6a6a; color: white; }
+#rotate-button:hover, #coordinate-toggle:hover, #replay-toggle:hover, #rules-toggle:hover { background-color: #555; }
 
 #replay-controls {
     margin-top: 15px;
@@ -248,6 +248,53 @@ button {
     margin-bottom: 15px;
     text-align: center;
 }
+
+#rules-section {
+    width: 100%;
+    max-width: 950px;
+    margin-top: 40px;
+    margin-bottom: 40px;
+    background-color: #fff;
+    border: 4px solid #333;
+    border-radius: 5px;
+    padding: 25px;
+    box-sizing: border-box;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    text-align: left;
+}
+
+#rules-section h2 {
+    margin-top: 0;
+    border-bottom: 2px solid #ccc;
+    padding-bottom: 10px;
+    text-align: center;
+}
+
+#rules-section h3 {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    color: #444;
+}
+
+#rules-section ul {
+    padding-left: 20px;
+    margin-top: 5px;
+}
+
+#rules-section li {
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.disclaimer {
+    margin-top: 30px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+    font-size: 0.85em;
+    color: #666;
+    font-style: italic;
+    text-align: center;
+}
 </style>
 
 <div id="game-area-wrapper">
@@ -294,6 +341,46 @@ button {
         <button id="rotate-button">Rotate Board</button>
         <button id="coordinate-toggle">Show Coordinates</button>
         <button id="replay-toggle">Replay Mode</button>
+        <button id="rules-toggle">Show Rules</button>
+    </div>
+</div>
+
+<div id="rules-section" style="display: none;">
+    <h2>Lava and Water: Official Rules (December 2025)</h2>
+    
+    <h3>Core Setup</h3>
+    <ul>
+        <li><strong>Players & Pieces:</strong> Two players (Lava and Water). There are two types of blocks: Source blocks and Normal blocks.</li>
+        <li><strong>Board Layout:</strong> The first three rows closest to each player are filled with normal blocks, except for the center tile (second row, fourth column), which holds the source block.</li>
+        <li><strong>Turn Order:</strong> Lava always moves first.</li>
+    </ul>
+
+    <h3>Movement & Connectivity</h3>
+    <ul>
+        <li><strong>Normal Blocks:</strong> Can move anywhere on the board as long as they remain connected to their source. If a normal block loses connection, it must be discarded.</li>
+        <li><strong>Source Blocks:</strong> Can move anywhere. The source can also swap positions with any of the player's normal blocks. If moving or swapping the source leaves normal blocks disconnected, those normal blocks must be discarded.</li>
+    </ul>
+
+    <h3>Taking Rules</h3>
+    <ul>
+        <li><strong>Line Wipes:</strong> If a player moves a block (source or normal) to directly touch an opponent's normal block, it removes every normal block in the direction of the taking (e.g., touching a vertical line of blocks removes all blocks in that line).</li>
+        <li><strong>Source Immunity:</strong> The source block is NOT removed if it is caught in the direction of a line wipe. It is only removed when touched directly. However, the source block can initiate takes just like a normal block.</li>
+    </ul>
+
+    <h3>Queening (Promotion)</h3>
+    <ul>
+        <li><strong>Promotion:</strong> If a player's block reaches the farthest row on the opposite side of the board, it must be claimed as an additional source block.</li>
+        <li><strong>Action Scaling:</strong> The number of blocks a player can move in a turn scales with their source count (e.g., two source blocks = two moves per turn).</li>
+    </ul>
+
+    <h3>Win & Draw Conditions</h3>
+    <ul>
+        <li><strong>Win:</strong> Remove all of the opponent's normal blocks, OR remove all of the opponent's source blocks (which eliminates their normal blocks).</li>
+        <li><strong>Draw:</strong> Both players are reduced to exactly one normal block and one source block.</li>
+    </ul>
+
+    <div class="disclaimer">
+        Disclaimer: While this website was vibe-coded by Gemini, the game rules and mechanics are entirely human-designed. Reach out to @toojla on Discord for more information. 
     </div>
 </div>
 
@@ -659,10 +746,11 @@ let currentReplayIndex = 0;
 let selectedStartPos = null; 
 let gameOver = false; 
 let showCoordinates = false; 
+let isRulesVisible = false;
 
 let boardElement, statusElement, playerTurnElement, rotateButton, coordinateToggle, moveHistoryList;
 let replayToggleBtn, replayControls, replayStartBtn, replayPrevBtn, replayPlayBtn, replaySpeedBtn, replayNextBtn, replayEndBtn, replayStatusText;
-let pauseOverlay;
+let pauseOverlay, rulesToggleBtn, rulesSection;
 
 let isDoubleSpeed = false;
 let playIntervalId = null;
@@ -726,6 +814,22 @@ document.addEventListener('DOMContentLoaded', () => {
     replayNextBtn = document.getElementById('replay-next');
     replayEndBtn = document.getElementById('replay-end');
     replayStatusText = document.getElementById('replay-status');
+
+    rulesToggleBtn = document.getElementById('rules-toggle');
+    rulesSection = document.getElementById('rules-section');
+
+    function toggleRules() {
+        isRulesVisible = !isRulesVisible;
+        if (isRulesVisible) {
+            rulesSection.style.display = 'block';
+            if (rulesToggleBtn) rulesToggleBtn.textContent = 'Hide Rules';
+            rulesSection.scrollIntoView({ behavior: 'smooth' });
+        } else {
+            rulesSection.style.display = 'none';
+            if (rulesToggleBtn) rulesToggleBtn.textContent = 'Show Rules';
+        }
+    }
+    if (rulesToggleBtn) rulesToggleBtn.addEventListener('click', toggleRules);
 
     function createPieceElement(r, c) {
         const pieceValue = game.board[r][c];
