@@ -300,12 +300,12 @@ button {
 <div id="game-area-wrapper">
     <header>
         <h1>Lava & Water</h1>
-        <div id="room-display">Room: <span id="room-code-val"></span></div>
+        <div id="room-display">PGN Replay Workspace</div>
     </header>
 
     <div id="game-info">
-        <div id="player-turn">Initializing Game...</div>
-        <div id="status-message">Loading pieces and board.</div>
+        <div id="player-turn">PGN Reader Ready</div>
+        <div id="status-message">Paste your PGN below and click Load PGN.</div>
     </div>
 
     <div id="board-and-notation">
@@ -315,23 +315,27 @@ button {
         </div>
 
         <div id="board-wrapper">
-            <div id="game-board"></div>
-            <div id="pause-overlay">
-                <span>Game Paused</span>
-                <span style="font-size:0.6em; font-weight:normal; margin-top: 10px;">Waiting for opponent to connect</span>
-            </div>
+            <div id="game-board" class="replay-mode"></div>
         </div>
+
+        <!-- Expanded Sidebar containing Move History, Replay Controls, and PGN Input -->
         <div id="notation-panel" style="width: 320px; height: 612px; background-color: #fff; border: 4px solid #333; border-radius: 5px; padding: 10px; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; overflow-y: auto;">
-            <h3 style="margin: 0; text-align: center; border-bottom: 1px solid #ccc; padding-bottom: 5px;">Match Intel</h3>
+            <h3 style="margin: 0; text-align: center; border-bottom: 1px solid #ccc; padding-bottom: 5px;">Replay Workspace</h3>
             
+            <!-- PGN Input Section -->
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+                <textarea id="pgn-input" placeholder="Paste PGN here..." rows="5" style="width: 100%; padding: 8px; box-sizing: border-box; font-family: monospace; font-size: 0.85em; resize: vertical;"></textarea>
+                <button id="load-pgn-btn" style="background-color: #0099cc; color: white; width: 100%; padding: 8px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Load PGN</button>
+            </div>
+
             <!-- Move History Section -->
-            <div style="flex-grow: 1; display: flex; flex-direction: column; min-height: 180px;">
+            <div style="flex-grow: 1; display: flex; flex-direction: column; min-height: 140px;">
                 <h4 style="margin: 0 0 5px 0; font-size: 0.9em; color: #555;">Move History</h4>
                 <div id="move-history-list" style="flex-grow: 1; overflow-y: auto; background: #fafafa; border: 1px solid #ddd; border-radius: 3px; padding: 5px;"></div>
             </div>
 
-            <!-- Replay Controls Section (Hidden until Replay Mode is active) -->
-            <div id="replay-controls" style="display: none; background: #e4e4e4; padding: 8px; border-radius: 5px; border: 2px solid #ccc; text-align: center;">
+            <!-- Replay Controls Section -->
+            <div id="replay-controls" style="background: #e4e4e4; padding: 8px; border-radius: 5px; border: 2px solid #ccc; text-align: center;">
                 <h4 style="margin: 0 0 5px 0; font-size: 0.9em; color: #555;">Replay Controls</h4>
                 <div style="display: flex; justify-content: center; gap: 4px; margin-bottom: 5px;">
                     <button id="replay-start" style="padding: 5px 8px; font-size: 0.8em;">|&lt;</button>
@@ -344,32 +348,13 @@ button {
                 <span id="replay-status" style="font-size: 0.85em; font-weight: bold;">Move 0 / 0</span>
             </div>
 
-            <!-- Quick Actions & Rules Sidebar Toggle -->
-            <div style="display: flex; flex-direction: column; gap: 6px; border-top: 1px solid #ccc; padding-top: 8px;">
-                <button id="replay-toggle" style="width: 100%; margin: 0; background-color: #6a6a6a; color: white; padding: 8px; font-size: 0.9em;">Replay Mode</button>
-                <button id="rules-toggle" style="width: 100%; margin: 0; background-color: #6a6a6a; color: white; padding: 8px; font-size: 0.9em;">Show Rules</button>
-                <button id="rotate-button" style="width: 100%; margin: 0; background-color: #6a6a6a; color: white; padding: 8px; font-size: 0.9em;">Rotate Board</button>
-                <button id="coordinate-toggle" style="width: 100%; margin: 0; background-color: #6a6a6a; color: white; padding: 8px; font-size: 0.9em;">Show Coordinates</button>
-                <button id="pgn-link-btn" onclick="window.open('/pgn', '_blank')" style="width: 100%; margin: 0; background-color: #0099cc; color: white; padding: 8px; font-size: 0.9em;">PGN Workspace</button>
-                <button id="download-txt-btn" style="width: 100%; margin: 0; background-color: #28a745; color: white; padding: 8px; font-size: 0.9em;">Download PGN</button>
-                <button id="copy-pgn-btn" style="width: 100%; margin: 0; background-color: #ff8c00; color: white; padding: 8px; font-size: 0.9em;">Copy PGN</button>
+            <!-- Board Utility Buttons -->
+            <div style="display: flex; gap: 6px; border-top: 1px solid #ccc; padding-top: 8px;">
+                <button id="rotate-button" style="flex: 1; background-color: #6a6a6a; color: white; padding: 8px; font-size: 0.85em; border: none; border-radius: 4px; cursor: pointer;">Rotate</button>
+                <button id="coordinate-toggle" style="flex: 1; background-color: #6a6a6a; color: white; padding: 8px; font-size: 0.85em; border: none; border-radius: 4px; cursor: pointer;">Coords</button>
             </div>
-
-
         </div>
     </div>
-
-    <div id="replay-controls" style="display: none;">
-        <button id="replay-start">|&lt;</button>
-        <button id="replay-prev">&lt; Prev</button>
-        <button id="replay-play">Play</button>
-        <button id="replay-speed">1x</button>
-        <button id="replay-next">Next &gt;</button>
-        <button id="replay-end">&gt;|</button>
-        <span id="replay-status">Move 0 / 0</span>
-    </div>
-
-
 </div>
 
 <div id="rules-section" style="display: none;">
@@ -410,8 +395,6 @@ button {
         Disclaimer: While this website was vibe-coded by Gemini, the game rules and mechanics are entirely human-designed. Reach out to @toojla on Discord for more information. 
     </div>
 </div>
-
-<script src="/socket.io/socket.io.js"></script>
 
 <script>
 class LavaAndWaterGame {
@@ -764,8 +747,8 @@ class LavaAndWaterGame {
 <script>
 let counter = 0;
 let myRole = 'spectator';
-let lavaConnected = false;
-let waterConnected = false;
+let lavaConnected = true;
+let waterConnected = true;
 let isRotated = false;
 let isReplayMode = false;
 let replayMovesList = [];
@@ -782,44 +765,7 @@ let pauseOverlay, rulesToggleBtn, rulesSection;
 let isDoubleSpeed = false;
 let playIntervalId = null;
 
-const socket = io({ auth: { serverOffset: 0 } });
-const roomCode = prompt("Enter room code to join:") || "default-room";
-socket.emit('join-game', roomCode);
-
-socket.on('role-assigned', (role) => {
-    myRole = role;
-    if (!boardElement) return;
-
-    if (myRole === 'water') {
-        isRotated = false;
-        boardElement.classList.remove('rotated-board');
-        boardElement.classList.add('pov-water');
-    } else if (myRole === 'lava') {
-        isRotated = true;
-        boardElement.classList.add('rotated-board');
-        boardElement.classList.add('pov-lava');
-    }
-    renderBoard();
-    updateCaptures();
-});
-
-socket.on('room-status', (status) => {
-    lavaConnected = status.lavaConnected;
-    waterConnected = status.waterConnected;
-    if (typeof renderBoard === 'function') {
-        renderBoard();
-    }
-});
-
-function sendPlayerMove(startPosStr, endPosStr, isSwap) {
-    const clientOffset = `${socket.id}-${counter++}`;
-    const moveData = { startPosStr, endPosStr, isSwap };
-    socket.emit('player-move', { roomCode, moveData, clientOffset });
-}
-
 document.addEventListener('DOMContentLoaded', () => {
-    const roomCodeValEl = document.getElementById('room-code-val');
-    if (roomCodeValEl) roomCodeValEl.textContent = roomCode;
 
     if (typeof LavaAndWaterGame === 'undefined') return;
     window.game = new LavaAndWaterGame(); 
@@ -1007,16 +953,18 @@ document.addEventListener('DOMContentLoaded', () => {
         bottomElements.forEach(el => bottomContainer.appendChild(el));
     }
 
-    window.renderBoard = function(winStatusObj = { win: false, winner: 0, message: '' }) {
+    window.renderBoard = function(winStatus = { win: false, winner: 0, message: '' }) {
         if (!boardElement) return;
         boardElement.innerHTML = '';
-        gameOver = winStatusObj.win;
-        window.lastWinStatus = winStatusObj; // Track globally for PGN status checks
+        gameOver = winStatus.win;
         
         boardElement.classList.toggle('show-coordinates', showCoordinates);
         boardElement.classList.toggle('replay-mode', isReplayMode);
         boardElement.classList.toggle('rotated-board', isRotated);
 
+        // Explicitly declare rendering loops based on perspective to avoid coordinate snags.
+        // For Lava POV (isRotated = true): Top row is 10, Bottom row is 1. Left col is A(0), Right is G(6).
+        // For Water POV (isRotated = false): Top row is 1, Bottom row is 10. Left col is G(6), Right is A(0).
         let rowsToRender = isRotated ? [10, 9, 8, 7, 6, 5, 4, 3, 2, 1] : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         let colsToRender = isRotated ? [0, 1, 2, 3, 4, 5, 6] : [6, 5, 4, 3, 2, 1, 0];
 
@@ -1045,7 +993,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 boardElement.appendChild(cell);
             }
         }
-        updateStatus(winStatusObj.message);
+        updateStatus(winStatus.message);
         updateMoveHistoryDisplay();
 
         if (selectedStartPos && !isReplayMode) {
@@ -1265,6 +1213,7 @@ document.addEventListener('DOMContentLoaded', () => {
         game.movesMadeInTurn = [];
         game.turnCounter = 1;
         game.initializeMaterial();
+        game.moveHistory = []
 
         for (let i = 0; i < targetIndex; i++) {
             const m = replayMovesList[i];
@@ -1276,43 +1225,43 @@ document.addEventListener('DOMContentLoaded', () => {
         renderBoard();
     }
 
-    let speeds = [1, 2, 3, 5, 10];
-    let speedIndex = 0;
-    let currentSpeedFactor = speeds[speedIndex];
+let speeds = [1, 2, 3, 5, 10];
+let speedIndex = 0;
+let currentSpeedFactor = speeds[speedIndex];
 
-    function toggleReplayPlay() {
-        if (!playIntervalId) {
-            replayPlayBtn.textContent = 'Pause';
-            const speed = 1000 / currentSpeedFactor;
-            
-            playIntervalId = setInterval(() => {
-                if (currentReplayIndex < replayMovesList.length) {
-                    loadReplayState(currentReplayIndex + 1);
-                } else {
-                    clearInterval(playIntervalId);
-                    playIntervalId = null;
-                    replayPlayBtn.textContent = 'Play';
-                }
-            }, speed);
-        } else {
-            clearInterval(playIntervalId);
-            playIntervalId = null;
-            replayPlayBtn.textContent = 'Play';
-        }
-    }
-
-    function toggleReplaySpeed() {
-        speedIndex = (speedIndex + 1) % speeds.length;
-        currentSpeedFactor = speeds[speedIndex];
+function toggleReplayPlay() {
+    if (!playIntervalId) {
+        replayPlayBtn.textContent = 'Pause';
+        const speed = 1000 / currentSpeedFactor;
         
-        if (replaySpeedBtn) replaySpeedBtn.textContent = currentSpeedFactor + 'x';
-
-        if (playIntervalId) {
-            clearInterval(playIntervalId);
-            playIntervalId = null;
-            toggleReplayPlay();
-        }
+        playIntervalId = setInterval(() => {
+            if (currentReplayIndex < replayMovesList.length) {
+                loadReplayState(currentReplayIndex + 1);
+            } else {
+                clearInterval(playIntervalId);
+                playIntervalId = null;
+                replayPlayBtn.textContent = 'Play';
+            }
+        }, speed);
+    } else {
+        clearInterval(playIntervalId);
+        playIntervalId = null;
+        replayPlayBtn.textContent = 'Play';
     }
+}
+
+function toggleReplaySpeed() {
+    speedIndex = (speedIndex + 1) % speeds.length;
+    currentSpeedFactor = speeds[speedIndex];
+    
+    if (replaySpeedBtn) replaySpeedBtn.textContent = currentSpeedFactor + 'x';
+
+    if (playIntervalId) {
+        clearInterval(playIntervalId);
+        playIntervalId = null;
+        toggleReplayPlay();
+    }
+}
 
     function toggleReplayMode() {
         isReplayMode = !isReplayMode;
@@ -1344,103 +1293,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (replayNextBtn) replayNextBtn.addEventListener('click', () => { if (currentReplayIndex < replayMovesList.length) loadReplayState(currentReplayIndex + 1); });
     if (replayEndBtn) replayEndBtn.addEventListener('click', () => { loadReplayState(replayMovesList.length); });
 
-    // Download PGN Button Logic
-    const downloadTxtBtn = document.getElementById('download-txt-btn');
-    if (downloadTxtBtn) {
-        downloadTxtBtn.addEventListener('click', () => {
-            let moveText = "";
-            
-            game.moveHistory.forEach((turn) => {
-                const movesStr = turn.moves.join(' ');
-                moveText += `${turn.turn}. ${movesStr}\n`;
-            });
-
-            if (game.movesMadeInTurn.length > 0) {
-                const movesStr = game.movesMadeInTurn.map(m => m.notation).join(' ');
-                moveText += `${game.turnCounter}. ${movesStr}\n`;
-            }
-
-            const lavaNormals = game.getNormalPieces(game.LAVA).length;
-            const lavaSources = game.lavaSources.length;
-            const waterNormals = game.getNormalPieces(game.WATER).length;
-            const waterSources = game.waterSources.length;
-
-            let matchStatus = "lava water"; // In progress default
-            if (gameOver && window.lastWinStatus) {
-                if (window.lastWinStatus.winner === game.LAVA) {
-                    matchStatus = "LAVA water";
-                } else if (window.lastWinStatus.winner === game.WATER) {
-                    matchStatus = "lava WATER";
-                } else {
-                    matchStatus = "LAVA WATER"; // Draw
-                }
-            }
-
-            const pgnContent = 
-                `${new Date().toISOString().split('T')[0]}\n` +
-                `${matchStatus}\n` +
-                `20 1, 20 1\n` +
-                `${lavaNormals} ${lavaSources}, ${waterNormals} ${waterSources}\n\n` +
-                `${moveText.trim()}`;
-
-            const blob = new Blob([pgnContent], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'game-record.txt';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        });
-    }
-// Copy PGN Button Logic
-    const copyPgnBtn = document.getElementById('copy-pgn-btn');
-    if (copyPgnBtn) {
-        copyPgnBtn.addEventListener('click', () => {
-            let moveText = "";
-            
-            game.moveHistory.forEach((turn) => {
-                const movesStr = turn.moves.join(' ');
-                moveText += `${turn.turn}. ${movesStr}\n`;
-            });
-
-            if (game.movesMadeInTurn.length > 0) {
-                const movesStr = game.movesMadeInTurn.map(m => m.notation).join(' ');
-                moveText += `${game.turnCounter}. ${movesStr}\n`;
-            }
-
-            const lavaNormals = game.getNormalPieces(game.LAVA).length;
-            const lavaSources = game.lavaSources.length;
-            const waterNormals = game.getNormalPieces(game.WATER).length;
-            const waterSources = game.waterSources.length;
-
-            let matchStatus = "lava water"; // In progress default
-            if (gameOver && window.lastWinStatus) {
-                if (window.lastWinStatus.winner === game.LAVA) {
-                    matchStatus = "LAVA water";
-                } else if (window.lastWinStatus.winner === game.WATER) {
-                    matchStatus = "lava WATER";
-                } else {
-                    matchStatus = "LAVA WATER"; // Draw
-                }
-            }
-
-            const pgnContent = 
-                `${new Date().toISOString().split('T')[0]}\n` +
-                `${matchStatus}\n` +
-                `20 1, 20 1\n` +
-                `${lavaNormals} ${lavaSources}, ${waterNormals} ${waterSources}\n\n` +
-                `${moveText.trim()}`;
-
-            navigator.clipboard.writeText(pgnContent).then(() => {
-                copyPgnBtn.textContent = "Copied!";
-                setTimeout(() => { copyPgnBtn.textContent = "Copy PGN"; }, 2000);
-            }).catch(err => {
-                console.error('Failed to copy PGN: ', err);
-            });
-        });
-    }
     document.addEventListener('keydown', (e) => {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
         const key = e.key.toLowerCase();
@@ -1451,13 +1303,40 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    socket.on('opponent-move', (moveData, serverOffset) => {
-        if (!isReplayMode && typeof game !== 'undefined') {
-            const result = game.makeMove(moveData.startPosStr, moveData.endPosStr, moveData.isSwap);
-            renderBoard({ win: result.win, winner: result.win ? (3 - game.currentPlayer) : 0, message: result.message });
-        }
-        socket.auth.serverOffset = serverOffset;
-    });
+   const loadPgnBtn = document.getElementById('load-pgn-btn');
+    const pgnInput = document.getElementById('pgn-input');
+
+    if (loadPgnBtn) {
+        loadPgnBtn.addEventListener('click', () => {
+            const rawText = pgnInput.value.trim();
+            if (!rawText) return;
+
+            replayMovesList = [];
+            const lines = rawText.split('\n');
+            let readingMoves = false;
+
+            lines.forEach(line => {
+                if (/^\d+\./.test(line)) readingMoves = true;
+                if (line.includes('/')) readingMoves = false;
+
+                if (readingMoves) {
+                    const moveRegex = /([a-zA-Z]\d+)[-]?([a-zA-Z]\d+)(\s*\(S\))?/g;
+                    let match;
+                    while ((match = moveRegex.exec(line)) !== null) {
+                        replayMovesList.push({
+                            startPosStr: match[1].toUpperCase(),
+                            endPosStr: match[2].toUpperCase(),
+                            isSwap: !!match[3]
+                        });
+                    }
+                }
+            });
+
+            isReplayMode = true;
+            document.getElementById('replay-controls').style.display = 'block';
+            loadReplayState(0);
+        });
+    }
 
     renderBoard();
 });

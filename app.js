@@ -236,7 +236,9 @@ async function main() {
   app.get('/', (req, res) => {
     res.sendFile(join(__dirname, 'index.html'));
   });
-
+  app.get('/pgn', (req, res) => {
+    res.sendFile(join(__dirname, 'pgn.html'));
+  });
   const rooms = {};
 
   function broadcastRoomStatus(roomCode) {
